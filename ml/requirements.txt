@@ -1,0 +1,8 @@
+# Install later, at the ML phase (Prophet and PyTorch are heavy)
+scikit-learn
+xgboost
+prophet
+shap
+joblib
+ortools
+networkx
