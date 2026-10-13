@@ -1,6 +1,7 @@
 # ASTRA-LOG: Predictive Logistics & Forward Supply Chain
 
-Indian Army | SIH 2026 | PS SIH26251 | Team VisionGuard 2.0
+Indian Army | SIH 2026 | PS SIH26251 | Team VisionGuard 2.0 2k26
+
 
 One secure command view that forecasts needs, tracks stock, plans routes and mode (road, air, mule) and warns
 commanders before stocks run out. Pilot geography: Northern sector (Chandigarh, Jammu and Srinagar depots to Kargil,
