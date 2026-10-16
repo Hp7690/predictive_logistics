@@ -1,6 +1,6 @@
 """MQTT bridge: edge nodes (LoRa / satellite / radio gateways) publish stock readings, the API stores them.
 Topics:  astra/stock/<LOC>   astra/heartbeat/<LOC>   (control: astra/control/<LOC> goes the other way)"""
-import json, os, threading
+import json, math, os, threading
 from datetime import datetime, timezone
 from .db import SessionLocal
 from . import models as m
@@ -23,9 +23,16 @@ def process(s, topic, payload):
     if "battery" in payload:
         node.battery = float(payload["battery"])
     if kind == "stock":
-        row = s.query(m.Inventory).filter_by(location_id=loc.id, item=payload["item"]).first()
-        if row:
-            row.stock = round(float(payload["stock"]), 1)
+        row = s.query(m.Inventory).filter_by(location_id=loc.id, item=payload.get("item")).first()
+        bad = validate(row, payload)
+        if bad:      # edge validation: bad readings never reach the stock figures
+            node.rejected = (node.rejected or 0) + 1
+            if node.rejected % 5 == 1:
+                s.add(m.AuditLog(username=node.code, action=f"Edge validation rejected a {payload.get('item')} reading: {bad}"))
+                event = {"type": "edge", "message": f"{node.code} ({loc.name}): reading rejected by edge validation ({bad})"}
+            s.commit()
+            return event
+        row.stock = round(float(payload["stock"]), 1)
         node.online = True
         if payload.get("batch") and payload.get("last"):
             event = {"type": "edge", "message": f"{node.code} ({loc.name}) back online: {payload.get('n', 0)} buffered readings synced"}
@@ -38,6 +45,20 @@ def process(s, topic, payload):
             event = {"type": "edge", "message": f"{node.code} ({loc.name}) went offline: working from local cache"}
     s.commit()
     return event
+
+def validate(row, payload):
+    """Edge data-quality rules. Returns a reason string if the reading must be rejected."""
+    try:
+        v = float(payload["stock"])
+    except Exception:
+        return "not a number"
+    if not math.isfinite(v) or v < 0:
+        return "negative or invalid value"
+    if row is None:
+        return "unknown item"
+    if not payload.get("batch") and row.stock and abs(v - row.stock) > max(0.35 * row.stock, 30):
+        return f"jump from {row.stock:.0f} to {v:.0f} is not physically plausible"
+    return None
 
 def _on_message(client, userdata, msg):
     s = SessionLocal()

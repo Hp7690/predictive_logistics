@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { MapContainer, TileLayer, LayersControl, LayerGroup, Polyline, CircleMarker, Circle, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,6 +20,7 @@ function along(pts, f) {
 }
 
 export default function MapView({ map, dos = [], convoys = [], weather = [], selected, onSelect, height = 480 }) {
+  const [lmap, setLmap] = useState(null);
   if (!map) return <p className="mu">Loading map...</p>;
   const loc = Object.fromEntries(map.locations.map((l) => [l.code, l]));
   const bounds = L.latLngBounds(map.locations.map((l) => [l.lat, l.lon]));
@@ -28,9 +30,15 @@ export default function MapView({ map, dos = [], convoys = [], weather = [], sel
   };
   const moving = convoys.filter((c) => ['loaded', 'in_transit'].includes(c.status));
   const routeColor = (s) => (s.risk < 0.35 ? '#7fb069' : s.risk < 0.55 ? '#e0a526' : '#d2493a');
+  const zoomTo = (codes) => lmap && lmap.fitBounds(L.latLngBounds(codes.map((c) => [loc[c].lat, loc[c].lon])), { padding: [40, 40] });
   return (
     <>
-      <MapContainer bounds={bounds} boundsOptions={{ padding: [30, 30] }} scrollWheelZoom style={{ height, width: '100%' }} className="leaflet-box">
+      <div className="row">
+        <button onClick={() => lmap && lmap.fitBounds(bounds, { padding: [30, 30] })}>Full sector</button>
+        {loc.D1 && loc.P3 && <button onClick={() => zoomTo(['D1', 'P3'])}>Zoom: Chandigarh to Leh</button>}
+        {loc.D3 && loc.P1 && <button onClick={() => zoomTo(['D3', 'P1', 'P3'])}>Zoom: Srinagar to Kargil, Leh</button>}
+      </div>
+      <MapContainer ref={setLmap} bounds={bounds} boundsOptions={{ padding: [30, 30] }} scrollWheelZoom style={{ height, width: '100%' }} className="leaflet-box">
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Street (OSM)"><TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /></LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="Terrain (OpenTopoMap)"><TileLayer attribution="&copy; OpenTopoMap, OSM contributors" url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" /></LayersControl.BaseLayer>
@@ -64,14 +72,14 @@ export default function MapView({ map, dos = [], convoys = [], weather = [], sel
           <LayersControl.Overlay checked name="Convoys">
             <LayerGroup>
               {moving.map((c) => {
-                const st = c.stops[0], f = c.status === 'loaded' ? 0.06 : 0.5, d = loc[c.depot], p = loc[st.post];
+                const st = c.stops[0], f = c.progress || (c.status === 'loaded' ? 0.06 : 0.5), d = loc[c.depot], p = loc[st.post];
                 if (!d || !p) return null;
                 const seg = map.segments.find((s) => s.from === c.depot && s.to === st.post);
                 const pts = c.mode === 'road' && seg ? seg.wp : [[d.lat, d.lon], [p.lat, p.lon]];
                 return (
                   <LayerGroup key={c.code}>
                     {c.mode !== 'road' && <Polyline positions={pts} pathOptions={{ color: '#6aa7c9', weight: 3, dashArray: '2 8' }} />}
-                    <Marker position={along(pts, f)} icon={moveIcon(c.mode === 'air' ? '✈' : c.mode === 'mule' ? 'M' : '▶')}><Tooltip>{c.code} ({c.mode}) to {st.post}, {c.status.replace('_', ' ')}</Tooltip></Marker>
+                    <Marker position={along(pts, f)} opacity={c.gps_ok === false ? 0.5 : 1} icon={moveIcon(c.mode === 'air' ? '✈' : c.mode === 'drone' ? 'D' : c.mode === 'mule' ? 'M' : '▶')}><Tooltip>{c.code} ({c.mode}) to {st.post}, {c.status.replace('_', ' ')}, {Math.round(f * 100)}%{c.gps_ok === false ? ', GPS lost: last known position (LoRa fallback)' : ''}</Tooltip></Marker>
                   </LayerGroup>
                 );
               })}
@@ -89,7 +97,7 @@ export default function MapView({ map, dos = [], convoys = [], weather = [], sel
           </CircleMarker>
         ))}
       </MapContainer>
-      <p className="mu">Square = depot, circle = forward post (colour = days of supply), line colour = route risk, dashed red = closed pass, ▶ / ✈ / M = convoy by road / air / mule. Layers: top-right.</p>
+      <p className="mu">Square = depot, circle = forward post (colour = days of supply), line colour = route risk, dashed red = closed pass, ▶ / ✈ / D / M = convoy by road / air / drone / mule (faded = GPS lost, last known position). Layers: top-right.</p>
     </>
   );
 }

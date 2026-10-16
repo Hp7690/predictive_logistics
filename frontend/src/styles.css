@@ -51,3 +51,6 @@ th{color:var(--mu);font:500 12px Oswald;letter-spacing:.1em;text-transform:upper
 .leaflet-control-layers{background:var(--panel)!important;color:var(--tx)!important}
 .login-wrap{min-height:100vh}.login{max-width:430px;margin:9vh auto 0;display:block}.login label{display:block;margin:8px 0}.login input{width:100%;margin-top:4px}
 .logo{font:600 40px Oswald;letter-spacing:.18em;color:var(--khaki)}.tag{font:500 15px Oswald;letter-spacing:.1em;text-transform:uppercase;margin:2px 0 6px}
+
+.chip{text-transform:none;letter-spacing:0;font:400 13px Barlow,sans-serif;padding:3px 10px;border-radius:12px}.answer{background:var(--panel2);border-left:5px solid var(--khaki);padding:10px 14px;margin:8px 0;font-size:16px}
+.mode.drone{color:#c58cf0;border-color:#c58cf0}input[type=range]{padding:0;vertical-align:middle}

@@ -95,6 +95,9 @@ class Convoy(Base):
     eta_hours = Column(Float)
     mode = Column(String(10), default="road")   # road | air | mule
     note = Column(Text, default="")
+    progress = Column(Float, default=0)          # 0..1 along the route (GPS / last known)
+    gps_ok = Column(Boolean, default=True)       # False = GPS lost, position is last known
+    pos_time = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=now)
 
 class Alert(Base):
@@ -124,3 +127,4 @@ class EdgeNode(Base):          # offline-first edge node at a depot / post (LoRa
     buffered = Column(Integer, default=0)       # readings stored on the node while offline
     battery = Column(Float, default=100)
     rfid_tags = Column(Integer, default=0)
+    rejected = Column(Integer, default=0)       # readings rejected by edge validation

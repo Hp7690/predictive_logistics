@@ -56,14 +56,16 @@ export function StockForm({ onDone }) {
   const [item, setItem] = useState('Ration');
   const [delta, setDelta] = useState(100);
   const [reason, setReason] = useState('');
+  const [tag, setTag] = useState('');
   const [msg, act] = useAct(onDone);
-  const send = () => act(() => api('/inventory/update', { method: 'POST', body: { item, delta: Number(delta), reason } }), (r) => `${ITEM_LABEL[r.item]} stock is now ${r.stock}`);
+  const send = () => act(() => api('/inventory/update', { method: 'POST', body: { item, delta: Number(delta), reason: tag ? `${reason} RFID tag ${tag}`.trim() : reason } }), (r) => `${ITEM_LABEL[r.item]} stock is now ${r.stock}`);
   return (
     <div>
       <div className="row">
         <ItemSelect value={item} onChange={setItem} />
         <input aria-label="Change (+ in, - out)" type="number" value={delta} onChange={(e) => setDelta(e.target.value)} style={{ width: 100 }} />
         <input aria-label="Reason" placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <input aria-label="RFID tag or SSCC" placeholder="RFID tag / SSCC (optional)" value={tag} onChange={(e) => setTag(e.target.value)} />
         <button className="primary" onClick={send}>Update stock</button>
       </div>
       <p className="mu">Positive number = stock in, negative = stock out.</p>

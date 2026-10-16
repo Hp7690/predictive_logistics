@@ -54,7 +54,11 @@ def seed(reset=False):
             if loc[code].type == "post":
                 daily = avg[(code, item)]; stock = daily * float(rng.uniform(2.5, 14)); reorder = daily * 7
                 if code == "P3":   # Post C (Leh): fuel and medical low, rations and ammo fine (matches the dashboard concept)
-                    stock = daily * {"POL": 2.0, "Medical": 2.1, "Ration": 11.9, "Ammo": 9.8}[item]
+                    stock = daily * {"POL": 2.0, "Medical": 2.1, "Ration": 11.9, "Ammo": 9.8, "Spares": 8.0}[item]
+                # visible surplus and non-moving stock (matches the CAG story: some stock sits idle while other posts run short)
+                over = {("P8", "Ration"): 38, ("P8", "POL"): 32, ("P2", "Ammo"): 45, ("P5", "Medical"): 60, ("P7", "Spares"): 160, ("P1", "Spares"): 120}
+                if (code, item) in over:
+                    stock = daily * over[(code, item)]
             else:
                 daily = cons[cons.item == item].groupby("post").qty.mean().sum() / 3; stock = daily * float(rng.uniform(40, 70)); reorder = daily * 20
             s.add(m.Inventory(location_id=ids[code], item=item, stock=round(stock), reorder_level=round(reorder)))

@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { useLoad } from '../hooks.js';
 import { Card, Pill, Table, Err, Gauge, ModeBadge, stopsText } from '../components/ui.jsx';
 import { RequestForm, SosForm, UseForm } from '../components/Forms.jsx';
-import { EdgeTable } from '../components/Panels.jsx';
+import { EdgeTable, AskPanel } from '../components/Panels.jsx';
 import { ITEMS, ITEM_LABEL } from '../components/icons.jsx';
 
 export default function Post() {
@@ -29,6 +29,7 @@ export default function Post() {
         {al.length ? al.map((a, i) => <div key={i} className={`alert ${a.level}`}><b>{a.message}</b><small>{a.reason}</small></div>) : <p className="mu">No alerts for your post.</p>}
       </Card>
       <Card title="Emergency (SOS)" tone="sos-card"><SosForm onDone={all} /></Card>
+      <Card title="Ask ASTRA (offline assistant)"><AskPanel examples={['mera fuel kitna bacha hai', 'fuel next 7 days', 'weather at my post', 'is Zoji La open']} /></Card>
       <Card title="Request supplies" span={6}><RequestForm onDone={all} /></Card>
       <Card title="Log today's consumption" span={6}><UseForm onDone={all} /></Card>
       <Card title="My edge node (works offline, syncs when the link returns)"><EdgeTable nodes={nodes.data} /></Card>

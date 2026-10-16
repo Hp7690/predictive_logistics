@@ -61,3 +61,12 @@ ROUTES = [
     _r("D2", "P8", "Jammu-Srinagar-Zoji La", 570, .8, .6, "Zoji La", JS + seg(SL, SR, KHALSI)[1:]),
     _r("D1", "P8", "Manali-Leh Hwy + Leh-Khalsi", 860, .75, .65, "Baralacha La", _ML_KG + seg(SL, LEH, KHALSI)[1:]),
 ]
+
+# Item catalog. gtin = illustrative GS1 GTIN-14 (RFID / barcode ready). cls: fast = continuous demand, slow = intermittent (Croston/SBA)
+ITEM_CATALOG = {
+    "Ration": dict(label="Rations", kg=2, gtin="08901234000011", cls="fast"),
+    "POL": dict(label="Fuel (POL)", kg=10, gtin="08901234000028", cls="fast"),
+    "Ammo": dict(label="Ammunition", kg=5, gtin="08901234000035", cls="fast"),
+    "Medical": dict(label="Medical", kg=1, gtin="08901234000042", cls="fast"),
+    "Spares": dict(label="Vehicle spares", kg=8, gtin="08901234000059", cls="slow"),
+}

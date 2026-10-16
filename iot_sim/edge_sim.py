@@ -59,7 +59,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--host", default="localhost"); ap.add_argument("--port", type=int, default=1883)
     ap.add_argument("--interval", type=float, default=5); ap.add_argument("--hours", type=float, default=1)
-    ap.add_argument("--chaos", action="store_true"); ap.add_argument("--offline", nargs="*", default=[])
+    ap.add_argument("--chaos", action="store_true"); ap.add_argument("--noise", action="store_true", help="inject bad readings to show edge validation"); ap.add_argument("--offline", nargs="*", default=[])
     a = ap.parse_args()
     nodes = load_nodes()
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -72,8 +72,14 @@ def main():
             on = bool(json.loads(msg.payload).get("online", True))
             print(f"[control] {code} link {'UP (syncing buffer)' if on else 'DOWN (buffering locally)'}")
             send(nodes[code].set_online(on))
-    client.on_connect = lambda c, u, f, rc, p=None: c.subscribe("astra/control/#")
-    client.on_message = on_message
+    def on_adjust(c, u, msg):      # a delivery or manual stock change in the system: keep the node in step
+        code = msg.topic.split("/")[-1]; d = json.loads(msg.payload)
+        if code in nodes and d.get("item") in nodes[code].stock:
+            nodes[code].stock[d["item"]] = float(d["stock"])
+    def route(c, u, msg):
+        (on_adjust if "/adjust/" in msg.topic else on_message)(c, u, msg)
+    client.on_connect = lambda c, u, f, rc, p=None: (c.subscribe("astra/control/#"), c.subscribe("astra/adjust/#"))
+    client.on_message = route
     client.connect(a.host, a.port); client.loop_start()
     time.sleep(1)
     for code in a.offline:
@@ -85,6 +91,11 @@ def main():
             for node in nodes.values():
                 send(node.tick(a.hours))
             n += 1
+            if a.noise and n % 4 == 0:
+                bad = random.choice([x for x in nodes.values() if x.kind == "post" and x.online])
+                item = random.choice(list(bad.stock))
+                send([(f"astra/stock/{bad.loc}", {"item": item, "stock": random.choice([-50, 99999]), "battery": 50, "ts": time.time()})])
+                print(f"[noise] bad {item} reading sent from {bad.loc}")
             if a.chaos and n % 12 == 0:
                 node = random.choice([x for x in nodes.values() if x.kind == "post"])
                 send(node.set_online(not node.online)); print(f"[chaos] {node.loc} link {'UP' if node.online else 'DOWN'}")

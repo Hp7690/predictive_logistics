@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { useLoad } from '../hooks.js';
 import { Card, Pill, Table, Err, Gauge, ModeBadge, stopsText } from '../components/ui.jsx';
 import { RequestForm, StockForm, UseForm, SosForm } from '../components/Forms.jsx';
-import { EdgeTable } from '../components/Panels.jsx';
+import { EdgeTable, AskPanel } from '../components/Panels.jsx';
 import { ITEMS, ITEM_LABEL } from '../components/icons.jsx';
 
 export default function Depot() {
@@ -11,6 +11,7 @@ export default function Depot() {
   const convoys = useLoad(() => api('/convoys'));
   const reqs = useLoad(() => api('/requests'));
   const nodes = useLoad(() => api('/edge-nodes'));
+  const cat = useLoad(() => api('/catalog'));
   const all = () => [inv, dos, convoys, reqs, nodes].forEach((x) => x.reload());
   const mine = (inv.data || []).filter((r) => r.type === 'depot');
   const rows = dos.data || [];
@@ -32,7 +33,9 @@ export default function Depot() {
       <Card title="Log actual consumption" span={6}><UseForm posts={posts.length ? posts : null} onDone={all} /></Card>
       <Card title="Emergency (SOS) for a post in my area" tone="sos-card"><SosForm posts={posts.length ? posts : null} onDone={all} /></Card>
       <Card title="Edge node status (offline-first IoT)"><EdgeTable nodes={nodes.data} /></Card>
-      <Card title="Convoys leaving my depot">
+      <Card title="Ask ASTRA (offline assistant)"><AskPanel examples={['Post fuel next 7 days', 'which posts are critical', 'weather at Leh']} /></Card>
+      <Card title="Item catalog (GS1 / RFID ready)" span={6}><Table rows={cat.data} cols={[{ h: 'Item', f: (c) => c.label }, { h: 'GS1 GTIN-14', f: (c) => c.gtin }, { h: 'Unit kg', f: (c) => c.kg }, { h: 'Demand type', f: (c) => (c.cls === 'slow' ? 'slow-moving (Croston/SBA)' : 'regular') }]} /></Card>
+      <Card title="Convoys leaving my depot" span={6}>
         <Table rows={convoys.data} empty="No convoys from this depot." cols={[{ h: 'Code', f: (c) => c.code }, { h: 'Mode', f: (c) => <ModeBadge mode={c.mode} /> }, { h: 'Asset', f: (c) => c.vehicle },
           { h: 'Route', f: (c) => stopsText(c) }, { h: 'Load', f: (c) => `${c.load_kg} kg` }, { h: 'Status', f: (c) => c.status }]} />
       </Card>

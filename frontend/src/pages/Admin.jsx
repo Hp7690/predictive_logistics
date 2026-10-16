@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import { useLoad, useAct } from '../hooks.js';
 import { Card, Table, Notice, Err, Kpi } from '../components/ui.jsx';
-import { EdgeTable, MlPanel } from '../components/Panels.jsx';
+import { EdgeTable, MlPanel, IntegrationPanel } from '../components/Panels.jsx';
 
 export default function Admin() {
   const users = useLoad(() => api('/users'));
@@ -34,6 +34,7 @@ export default function Admin() {
         <Notice msg={msg} />
       </Card>
       <Card title="Forecast model"><MlPanel /></Card>
+      <Card title="Q-FORCE / ERP integration API"><IntegrationPanel /></Card>
       <Card title="Edge nodes"><EdgeTable nodes={nodes.data} /></Card>
       <Card title="Audit log (latest 100)" right={<button onClick={log.reload}>Refresh</button>}>
         <div className="scroll tall"><Table rows={log.data} cols={[{ h: 'Time', f: (a) => a.time }, { h: 'User', f: (a) => a.user }, { h: 'Action', f: (a) => a.action }]} /></div>

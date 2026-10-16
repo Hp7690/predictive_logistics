@@ -30,7 +30,7 @@ export function Table({ cols, rows, empty = 'Nothing here yet.' }) {
     </table></div>
   );
 }
-export const ModeBadge = ({ mode }) => <span className={`mode ${mode}`}><Icon name={{ road: 'Road', air: 'Air', mule: 'Mule' }[mode]} size={14} /> {mode}</span>;
+export const ModeBadge = ({ mode }) => <span className={`mode ${mode}`}><Icon name={{ road: 'Road', air: 'Air', drone: 'Drone', mule: 'Mule' }[mode]} size={14} /> {mode}</span>;
 export const stopsText = (c) => c.stops.map((s) => `${s.post} (${s.eta_h} h)`).join(' → ');
 export const loadText = (c) => c.stops.map((s) => `${s.post}: ${Object.entries(s.items).map(([k, v]) => `${ITEM_LABEL[k] || k} ${v}`).join(', ')}`).join(' | ');
 export const riskLabel = (r) => (r < 0.35 ? 'low' : r < 0.55 ? 'medium' : 'high');

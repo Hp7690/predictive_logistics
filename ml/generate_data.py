@@ -8,6 +8,7 @@ ITEMS = {  # per-soldier daily use, winter sensitivity
     "POL":     (0.25, 0.55),
     "Ammo":    (0.06, 0.00),
     "Medical": (0.04, 0.15),
+    "Spares":  (0.02, 0.10),     # slow-moving: lumpy / intermittent demand
 }
 from ml.india import DEPOTS, POSTS   # real India pilot geography
 
@@ -34,6 +35,9 @@ def make_data(days=730, seed=42, end=None):
             mult = 1 + wsens * winter + 0.012 * snow - weekend
             mult = mult + ex * (0.6 if item == "Ammo" else 0.2)
             qty = base * mult * (1 + rng.normal(0, 0.06, days))
+            if item == "Spares":      # demand arrives in occasional lumps (about 1 day in 10)
+                occ = rng.random(days) < 0.10
+                qty = np.where(occ, np.round(rng.lognormal(np.log(max(base / 0.10 * 0.8, 1)), 0.45, days)), 0.0)
             c_rows.append(pd.DataFrame({"post": code, "item": item, "date": dates.date, "qty": qty.round(1)}))
     return pd.concat(c_rows, ignore_index=True), pd.concat(w_rows, ignore_index=True)
 

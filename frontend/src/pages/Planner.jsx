@@ -4,10 +4,10 @@ import { api } from '../api.js';
 import { useLoad, useAct } from '../hooks.js';
 import { Card, Kpi, Pill, Table, Notice, Err, ModeBadge, stopsText, loadText } from '../components/ui.jsx';
 import MapView from '../components/MapView.jsx';
-import { PostStatus, RouteModes, EdgeTable, WeatherTable, MlPanel, KpiPanel, Timeline, RiskWhy } from '../components/Panels.jsx';
+import { PostStatus, RouteModes, EdgeTable, WeatherTable, MlPanel, KpiPanel, Timeline, RiskWhy, AskPanel, BalancingPanel, PriorityPanel, WinterPanel } from '../components/Panels.jsx';
 import { ITEMS, ITEM_LABEL } from '../components/icons.jsx';
 
-const TABS = [['command', 'Command'], ['planning', 'Planning & what-if'], ['intel', 'Weather & edge nodes'], ['analytics', 'Analytics & AI']];
+const TABS = [['command', 'Command'], ['planning', 'Planning & what-if'], ['inventory', 'Inventory & balancing'], ['winter', 'Winter stocking'], ['intel', 'Weather & edge nodes'], ['analytics', 'Analytics & AI']];
 
 export default function Planner() {
   const [tab, setTab] = useState('command');
@@ -80,6 +80,7 @@ export default function Planner() {
           </div>
           <Err e={dos.err || map.err} />
         </Card>
+        <Card title="Ask ASTRA (offline assistant, English or Hinglish)"><AskPanel /></Card>
         <Card title="Route map (GIS), Northern sector" span={8}><MapView map={map.data} dos={rows} convoys={cv} weather={wx.data || []} selected={post} onSelect={setPost} height={500} /></Card>
         <Card title="Selected post" span={4}><PostStatus code={post} dos={rows} locs={locs} /></Card>
         <Card title={`Route and mode options: ${post}`} span={7}><RouteModes post={post} snow={snow} /></Card>
@@ -102,6 +103,10 @@ export default function Planner() {
             <label>Demand spike (%) <input type="number" min="0" value={spike} onChange={(e) => setSpike(e.target.value)} style={{ width: 80 }} placeholder="0" /></label>
             <label>at <select aria-label="Spike post" value={spikePost} onChange={(e) => setSpikePost(e.target.value)}><option value="">all posts</option>{posts.map((p) => <option key={p}>{p}</option>)}</select></label>
           </div>
+          <div className="row"><span className="mu">Quick scenarios:</span>
+            <button onClick={() => { setSnow('8'); setSpike(''); setSpikePost(''); }}>Heavy snowfall (8 cm)</button>
+            <button onClick={() => { setSnow(''); setSpike('80'); setSpikePost(post); }}>HADR surge: +80% demand at {post}</button>
+            <button onClick={() => { setSnow(''); setSpike(''); setSpikePost(''); }}>Reset scenario</button></div>
           <div className="row"><span className="mu">Road closures:</span>
             {passes.map((p) => <button key={p} className={closed(p) ? 'danger' : ''} onClick={() => togglePass(p)}>{closed(p) ? 'Reopen' : 'Close'} {p}</button>)}</div>
           {wi && wi.route_changes.length > 0 && <Table rows={wi.route_changes} cols={[
@@ -136,6 +141,18 @@ export default function Planner() {
         </Card>
       </>}
 
+      {tab === 'inventory' && <>
+        <Card title="Surplus-to-shortfall balancing and non-moving stock"><BalancingPanel /></Card>
+        <Card title="Priority ranking of scarce items" span={5}><PriorityPanel /></Card>
+        <Card title="Days of supply (all posts)" span={7}>
+          <div className="scroll tall"><Table rows={rows} cols={[
+            { h: 'Post', f: (r) => r.post }, { h: 'Item', f: (r) => ITEM_LABEL[r.item] }, { h: 'Stock', f: (r) => r.stock }, { h: 'Forecast/day', f: (r) => r.forecast_per_day },
+            { h: 'Days of supply', f: (r) => r.dos }, { h: 'Status', f: (r) => <Pill level={r.level} /> }]} /></div>
+        </Card>
+      </>}
+
+      {tab === 'winter' && <Card title="Advance winter stocking planner (snow-closure what-if)"><WinterPanel /></Card>}
+
       {tab === 'intel' && <>
         <Card title="Weather at forward posts (IMD feed plug-in point)" right={<button onClick={() => act(() => api('/weather/sync', { method: 'POST' }), (r) => `Live weather updated for ${r.updated} posts`)}>Pull live weather</button>}>
           <WeatherTable rows={wx.data} />
@@ -144,11 +161,6 @@ export default function Planner() {
         <Card title="Edge nodes (offline-first IoT: RFID, GPS, LoRa)">
           <EdgeTable nodes={nodes.data} onToggle={(n) => act(() => api(`/edge-nodes/${n.code}/link?online=${!n.online}`, { method: 'POST' }), `${n.code} link ${n.online ? 'cut: node keeps working offline' : 'restored: syncing'}`)} />
           <p className="mu">Run <code>python -m iot_sim.edge_sim</code> to stream readings over MQTT. Cut a link: the node buffers readings locally and syncs them when the link returns.</p>
-        </Card>
-        <Card title="Days of supply (all posts)">
-          <div className="scroll tall"><Table rows={rows} cols={[
-            { h: 'Post', f: (r) => r.post }, { h: 'Item', f: (r) => ITEM_LABEL[r.item] }, { h: 'Stock', f: (r) => r.stock }, { h: 'Forecast/day', f: (r) => r.forecast_per_day },
-            { h: 'Days of supply', f: (r) => r.dos }, { h: 'Status', f: (r) => <Pill level={r.level} /> }]} /></div>
         </Card>
       </>}
 
